@@ -117,3 +117,48 @@ export async function getDownlineJourney(
   return journey.reverse();
 }
 
+/**
+ * Get tree structure of downline
+ */
+export interface TreeNode {
+  user: IUser;
+  level: number;
+  children: TreeNode[];
+}
+
+export async function getDownlineTree(
+  userId: mongoose.Types.ObjectId,
+  maxDepth: number = 5
+): Promise<TreeNode | null> {
+  const rootUser = await User.findById(userId).select('-password');
+  if (!rootUser) return null;
+
+  const root: TreeNode = {
+    user: rootUser,
+    level: 0,
+    children: [],
+  };
+
+  async function buildNode(parentUserId: mongoose.Types.ObjectId, depth: number): Promise<TreeNode[]> {
+    if (depth > maxDepth) return [];
+
+    const directDownline = await User.find({ sponsorId: parentUserId }).select('-password');
+    const nodes: TreeNode[] = [];
+
+    for (const user of directDownline) {
+      const node: TreeNode = {
+        user,
+        level: depth,
+        children: [],
+      };
+      node.children = await buildNode(user._id, depth + 1);
+      nodes.push(node);
+    }
+
+    return nodes;
+  }
+
+  root.children = await buildNode(userId, 1);
+  return root;
+}
+

@@ -1,20 +1,38 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-interface User {
-  _id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  isActivated: boolean;
-  isAdmin: boolean;
-  wallet: {
-    balance: number;
-    pending: number;
-    totalEarned: number;
-  };
-}
+import Link from 'next/link';
+import { LineChart as LineChartIcon, Package, Users as UsersIcon, ReceiptText } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface Product {
   _id: string;
@@ -23,303 +41,224 @@ interface Product {
   isActive: boolean;
 }
 
-interface Transaction {
-  _id: string;
-  userId: {
-    firstName: string;
-    lastName: string;
-  };
-  amount: number;
-  type: string;
-  status: string;
-  createdAt: string;
+interface ActivityData {
+  month: string;
+  activity: number;
 }
 
 export default function AdminPage() {
-  const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'users' | 'products' | 'transactions'>('users');
-  const [newProduct, setNewProduct] = useState({
-    name: '',
-    description: '',
-    cost: '',
-    sellingPrice: '',
-    adminFee: '',
-    companyProfit: '',
-  });
-  const [creatingProduct, setCreatingProduct] = useState(false);
+  const [activityData, setActivityData] = useState<ActivityData[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
 
   useEffect(() => {
-    fetchData();
-  }, [activeTab]);
+    fetchProducts();
+    fetchActivityData();
+  }, []);
 
-  const fetchData = async () => {
+  const fetchProducts = async () => {
     try {
-      if (activeTab === 'products') {
-        const response = await fetch('/api/products');
-        if (response.ok) {
-          const data = await response.json();
-          setProducts(data.products || []);
-        }
-      } else if (activeTab === 'transactions') {
-        // You would need to create an admin transactions endpoint
-        // For now, we'll skip this
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      // ignore
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreatingProduct(true);
-
+  const fetchActivityData = async () => {
     try {
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newProduct.name,
-          description: newProduct.description,
-          cost: parseFloat(newProduct.cost),
-          sellingPrice: parseFloat(newProduct.sellingPrice),
-          adminFee: parseFloat(newProduct.adminFee) || 0,
-          companyProfit: parseFloat(newProduct.companyProfit) || 0,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.error || 'Failed to create product');
-        return;
+      const response = await fetch('/api/admin/stats/activity');
+      if (response.ok) {
+        const data = await response.json();
+        setActivityData(data.data || []);
       }
-
-      alert('Product created successfully');
-      setNewProduct({
-        name: '',
-        description: '',
-        cost: '',
-        sellingPrice: '',
-        adminFee: '',
-        companyProfit: '',
-      });
-      fetchData();
     } catch (error) {
-      alert('An error occurred. Please try again.');
+      console.error('Error fetching activity data:', error);
     } finally {
-      setCreatingProduct(false);
+      setActivityLoading(false);
     }
   };
 
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="px-4 sm:px-0 space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
   }
 
-  return (
-    <div className="px-4 py-6 sm:px-0">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Panel</h1>
+  const totalProducts = products.length;
+  const activeProducts = products.filter((p) => p.isActive).length;
 
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('products')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'products'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Products
-            </button>
-            <button
-              onClick={() => setActiveTab('transactions')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'transactions'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Transactions
-            </button>
-          </nav>
-        </div>
+  return (
+    <div className="px-4 sm:px-0 space-y-8">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/admin">Admin</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Overview</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
+        <p className="text-sm text-muted-foreground">
+          High-level view of products, users, and transactions.
+        </p>
       </div>
 
-      {activeTab === 'products' && (
-        <div className="space-y-6">
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Create New Product</h2>
-            <form onSubmit={handleCreateProduct} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Product Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newProduct.name}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, name: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={newProduct.description}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        description: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Cost (₱)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={newProduct.cost}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, cost: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Selling Price (₱)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={newProduct.sellingPrice}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        sellingPrice: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Admin Fee (₱)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newProduct.adminFee}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, adminFee: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Company Profit (₱)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={newProduct.companyProfit}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        companyProfit: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={creatingProduct}
-                className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 disabled:opacity-50"
-              >
-                {creatingProduct ? 'Creating...' : 'Create Product'}
-              </button>
-            </form>
-          </div>
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardDescription>Total Products</CardDescription>
+            <Package className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">{totalProducts}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {activeProducts} active
+            </p>
+          </CardContent>
+        </Card>
 
-          <div className="bg-white shadow rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">All Products</h2>
-            {products.length === 0 ? (
-              <p className="text-gray-600">No products found.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Selling Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {products.map((product) => (
-                      <tr key={product._id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {product.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ₱{product.sellingPrice.toLocaleString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              product.isActive
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {product.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardDescription>Users</CardDescription>
+            <UsersIcon className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">—</p>
+            <p className="mt-1 text-xs text-muted-foreground">Wire to admin users API</p>
+          </CardContent>
+        </Card>
 
-      {activeTab === 'transactions' && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Transactions</h2>
-          <p className="text-gray-600">
-            Transaction management feature coming soon.
-          </p>
-        </div>
-      )}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardDescription>Transactions</CardDescription>
+            <ReceiptText className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-semibold">—</p>
+            <p className="mt-1 text-xs text-muted-foreground">Wire to admin transactions API</p>
+          </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                Store activity
+                <LineChartIcon className="h-4 w-4 text-primary" />
+              </CardTitle>
+              <CardDescription>Last 6 periods</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px] w-full">
+              {activityLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={activityData.length > 0 ? activityData : [
+                      { month: 'Jan', activity: 0 },
+                      { month: 'Feb', activity: 0 },
+                      { month: 'Mar', activity: 0 },
+                      { month: 'Apr', activity: 0 },
+                      { month: 'May', activity: 0 },
+                      { month: 'Jun', activity: 0 },
+                    ]}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                  <defs>
+                    <linearGradient id="colorActivity" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 12 }}
+                    className="text-muted-foreground"
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    className="text-muted-foreground"
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: 'calc(var(--radius) - 2px)',
+                    }}
+                    formatter={(value: number) => [value, 'Activity']}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="activity"
+                    stroke="hsl(var(--primary))"
+                    fillOpacity={1}
+                    fill="url(#colorActivity)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Products</CardTitle>
+            <CardDescription>Latest items in the catalog.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {products.slice(0, 5).map((p) => (
+                    <TableRow key={p._id}>
+                      <TableCell className="font-medium">{p.name}</TableCell>
+                      <TableCell>₱{p.sellingPrice.toLocaleString()}</TableCell>
+                      <TableCell>{p.isActive ? 'Active' : 'Inactive'}</TableCell>
+                    </TableRow>
+                  ))}
+                  {products.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-muted-foreground">
+                        No products found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

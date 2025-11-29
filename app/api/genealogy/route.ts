@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
 import { getCurrentUser } from '@/lib/auth';
-import { getGenealogyPath, getDownline, getDirectReferrals, getDownlineJourney } from '@/lib/genealogy';
+import { getGenealogyPath, getDownline, getDirectReferrals, getDownlineJourney, getDownlineTree } from '@/lib/genealogy';
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,6 +30,15 @@ export async function GET(request: NextRequest) {
         );
       }
       return NextResponse.json({ journey }, { status: 200 });
+    }
+
+    // Handle tree view request
+    if (type === 'tree') {
+      const tree = await getDownlineTree(user._id, 5); // Limit to 5 levels for performance
+      if (!tree) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+      return NextResponse.json({ tree }, { status: 200 });
     }
 
     if (type === 'upline') {

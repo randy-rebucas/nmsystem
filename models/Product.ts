@@ -7,6 +7,7 @@ export interface IProduct extends Document {
   sellingPrice: number; // Selling price (cost + commissions + profit + admin fee)
   adminFee: number;
   companyProfit: number;
+  image?: string; // Product image URL or base64
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -42,6 +43,10 @@ const ProductSchema = new Schema<IProduct>(
       type: Number,
       default: 0,
       min: 0,
+    },
+    image: {
+      type: String,
+      trim: false, // Don't trim base64 images
     },
     isActive: {
       type: Boolean,
