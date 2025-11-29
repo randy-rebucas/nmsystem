@@ -4,6 +4,7 @@ import User from '@/models/User';
 import Transaction from '@/models/Transaction';
 import { getCurrentUser } from '@/lib/auth';
 import { processPendingCommissions } from '@/lib/commissionEngine';
+import { getSettings } from '@/lib/settings';
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,6 +37,21 @@ export async function POST(request: NextRequest) {
     if (updatedUser.wallet.balance < amount) {
       return NextResponse.json(
         { error: 'Insufficient balance' },
+        { status: 400 }
+      );
+    }
+
+    // Check withdrawal limits from settings
+    const settings = await getSettings();
+    if (amount < settings.minWithdraw) {
+      return NextResponse.json(
+        { error: `Minimum withdrawal amount is ${settings.minWithdraw}` },
+        { status: 400 }
+      );
+    }
+    if (amount > settings.maxWithdraw) {
+      return NextResponse.json(
+        { error: `Maximum withdrawal amount is ${settings.maxWithdraw}` },
         { status: 400 }
       );
     }

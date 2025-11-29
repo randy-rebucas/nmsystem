@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useSettings } from '@/hooks/use-settings';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { settings } = useSettings();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -84,7 +86,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <Card>
           <CardHeader className="space-y-1">
-            <CardTitle className="text-3xl text-center">Sign in to NMSystem</CardTitle>
+            <CardTitle className="text-3xl text-center">Sign in to {settings?.siteName || 'NMSystem'}</CardTitle>
             <CardDescription className="text-center">
               Or{' '}
               <Link

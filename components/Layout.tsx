@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useSettings } from '@/hooks/use-settings';
 
 interface User {
   id: string;
@@ -27,6 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [redirecting, setRedirecting] = useState(false);
+  const { settings } = useSettings();
   const isAuthFreeRoute =
     pathname === '/login' || pathname === '/register' || pathname === '/setup';
   const isAdminRoute = pathname?.startsWith('/admin');
@@ -105,7 +107,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <Link href="/dashboard" className="text-xl font-bold text-primary">
-                  NMSystem
+                  {settings?.siteName || 'NMSystem'}
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

@@ -16,6 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useSettings, formatCurrency, getCurrencySymbol } from '@/hooks/use-settings';
 
 interface Wallet {
   balance: number;
@@ -35,11 +36,14 @@ interface Transaction {
 }
 
 export default function WalletPage() {
+  const { settings } = useSettings();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
+  
+  const currencySymbol = settings ? getCurrencySymbol(settings.currency) : '₱';
 
   useEffect(() => {
     fetchWallet();
@@ -141,7 +145,7 @@ export default function WalletPage() {
           <CardHeader>
             <CardDescription>Available Balance</CardDescription>
             <CardTitle className="text-2xl text-green-600">
-              ₱{wallet.balance.toLocaleString()}
+              {formatCurrency(wallet.balance, settings?.currency || 'PHP')}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -150,7 +154,7 @@ export default function WalletPage() {
           <CardHeader>
             <CardDescription>Pending Commissions</CardDescription>
             <CardTitle className="text-2xl text-yellow-600">
-              ₱{wallet.pending.toLocaleString()}
+              {formatCurrency(wallet.pending, settings?.currency || 'PHP')}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -159,7 +163,7 @@ export default function WalletPage() {
           <CardHeader>
             <CardDescription>Total Earned</CardDescription>
             <CardTitle className="text-2xl text-blue-600">
-              ₱{wallet.totalEarned.toLocaleString()}
+              {formatCurrency(wallet.totalEarned, settings?.currency || 'PHP')}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -194,7 +198,13 @@ export default function WalletPage() {
                 required
               />
               <p className="text-sm text-muted-foreground">
-                Maximum: ₱{wallet.balance.toLocaleString()}
+                Maximum: {formatCurrency(wallet.balance, settings?.currency || 'PHP')}
+                {settings && (
+                  <span className="block mt-1">
+                    Min: {formatCurrency(settings.minWithdraw, settings.currency)} | 
+                    Max: {formatCurrency(settings.maxWithdraw, settings.currency)}
+                  </span>
+                )}
               </p>
             </div>
             <Button
@@ -248,7 +258,7 @@ export default function WalletPage() {
                         }`}
                       >
                         {transaction.amount >= 0 ? '+' : ''}
-                        ₱{Math.abs(transaction.amount).toLocaleString()}
+                        {formatCurrency(Math.abs(transaction.amount), settings?.currency || 'PHP')}
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className="capitalize">

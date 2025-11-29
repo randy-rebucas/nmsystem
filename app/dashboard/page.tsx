@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useSettings, formatCurrency } from '@/hooks/use-settings';
 
 interface User {
   id: string;
@@ -53,10 +54,13 @@ interface EarningsData {
 }
 
 export default function DashboardPage() {
+  const { settings } = useSettings();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
   const [earningsLoading, setEarningsLoading] = useState(true);
+  
+  const currency = settings?.currency || 'PHP';
 
   useEffect(() => {
     fetchUser();
@@ -164,7 +168,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold text-emerald-600">
-                ₱{user.wallet.balance.toLocaleString()}
+                {formatCurrency(user.wallet.balance, currency)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Ready to withdraw or use for purchases.
@@ -179,7 +183,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold text-amber-600">
-                ₱{user.wallet.pending.toLocaleString()}
+                {formatCurrency(user.wallet.pending, currency)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Commissions waiting to be released.
@@ -194,7 +198,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold text-blue-600">
-                ₱{user.wallet.totalEarned.toLocaleString()}
+                {formatCurrency(user.wallet.totalEarned, currency)}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 Lifetime commissions you’ve generated.
@@ -213,7 +217,7 @@ export default function DashboardPage() {
                   {user.rewardPoints.balance.toLocaleString()}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  ≈ ₱{(user.rewardPoints.balance / 100).toFixed(2)} available to redeem.
+                  ≈ {formatCurrency(user.rewardPoints.balance / 100, currency)} available to redeem.
                 </p>
               </CardContent>
             </Card>
@@ -233,7 +237,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 <div className="flex items-baseline gap-4">
                   <p className="text-2xl font-semibold">
-                    ₱{user.wallet.totalEarned.toLocaleString()}
+                    {formatCurrency(user.wallet.totalEarned, currency)}
                   </p>
                   <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-200">
                     +18% vs previous
@@ -272,7 +276,7 @@ export default function DashboardPage() {
                       <YAxis
                         tick={{ fontSize: 12 }}
                         className="text-muted-foreground"
-                        tickFormatter={(value) => `₱${(value / 1000).toFixed(0)}k`}
+                        tickFormatter={(value) => `${formatCurrency(value, currency).replace(/[0-9,]/g, '')}${(value / 1000).toFixed(0)}k`}
                       />
                       <Tooltip
                         contentStyle={{
@@ -280,7 +284,7 @@ export default function DashboardPage() {
                           border: '1px solid hsl(var(--border))',
                           borderRadius: 'calc(var(--radius) - 2px)',
                         }}
-                        formatter={(value: number) => [`₱${value.toLocaleString()}`, 'Earnings']}
+                        formatter={(value: number) => [formatCurrency(value, currency), 'Earnings']}
                       />
                       <Area
                         type="monotone"

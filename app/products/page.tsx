@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Image as ImageIcon } from 'lucide-react';
+import { useSettings, formatCurrency } from '@/hooks/use-settings';
 
 interface Product {
   _id: string;
@@ -30,9 +31,12 @@ interface Product {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const { settings } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
+  
+  const currency = settings?.currency || 'PHP';
 
   useEffect(() => {
     fetchProducts();
@@ -165,7 +169,7 @@ export default function ProductsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-3xl font-bold text-primary">
-                  ₱{product.sellingPrice.toLocaleString()}
+                  {formatCurrency(product.sellingPrice, currency)}
                 </div>
                 <Button
                   onClick={() => handlePurchaseClick(product)}
@@ -183,7 +187,7 @@ export default function ProductsPage() {
       <Alert>
         <AlertTitle>Commission Structure</AlertTitle>
         <AlertDescription>
-          Each product purchase distributes ₱1,170 in commissions across 20
+          Each product purchase distributes commissions across 20
           levels in your genealogy tree. Only activated users receive
           commissions.
         </AlertDescription>
@@ -194,7 +198,7 @@ export default function ProductsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Purchase</DialogTitle>
             <DialogDescription>
-              Are you sure you want to purchase {selectedProduct?.name} for ₱{selectedProduct?.sellingPrice.toLocaleString()}?
+              Are you sure you want to purchase {selectedProduct?.name} for {formatCurrency(selectedProduct?.sellingPrice || 0, currency)}?
             </DialogDescription>
           </DialogHeader>
           {selectedProduct?.image && selectedProduct.image.trim() && (

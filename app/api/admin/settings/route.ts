@@ -67,7 +67,8 @@ export async function POST(request: NextRequest) {
     
     // Update commission structure
     if (commissionStructure) {
-      const commissionMap = new Map<number, number>();
+      // Mongoose Maps only support string keys, so convert numeric keys to strings
+      const commissionMap = new Map<string, number>();
       Object.entries(commissionStructure).forEach(([level, amount]) => {
         const levelNum = parseInt(level);
         let amountNum: number;
@@ -79,7 +80,8 @@ export async function POST(request: NextRequest) {
           return; // Skip invalid entries
         }
         if (!isNaN(levelNum) && !isNaN(amountNum)) {
-          commissionMap.set(levelNum, amountNum);
+          // Convert level to string for Mongoose Map
+          commissionMap.set(String(levelNum), amountNum);
         }
       });
       settings.commissionStructure = commissionMap as any;

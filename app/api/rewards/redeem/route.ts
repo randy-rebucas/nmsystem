@@ -4,6 +4,7 @@ import User from '@/models/User';
 import RewardPoint from '@/models/RewardPoint';
 import Transaction from '@/models/Transaction';
 import { getCurrentUser } from '@/lib/auth';
+import { getSettings } from '@/lib/settings';
 
 // Conversion rate: 100 points = ₱1
 const POINTS_TO_PESO_RATE = 100;
@@ -37,6 +38,15 @@ export async function POST(request: NextRequest) {
     if (updatedUser.rewardPoints.balance < points) {
       return NextResponse.json(
         { error: 'Insufficient reward points' },
+        { status: 400 }
+      );
+    }
+
+    // Check minimum redemption points from settings
+    const settings = await getSettings();
+    if (points < settings.minRedemptionPoints) {
+      return NextResponse.json(
+        { error: `Minimum redemption is ${settings.minRedemptionPoints} points` },
         { status: 400 }
       );
     }

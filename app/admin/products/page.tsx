@@ -48,6 +48,7 @@ import {
 import { Plus, MoreHorizontal, Pencil, Trash2, Power, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useSettings, formatCurrency } from '@/hooks/use-settings';
 import {
   Pagination,
   PaginationContent,
@@ -71,12 +72,15 @@ interface Product {
 }
 
 export default function AdminProductsPage() {
+  const { settings } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  
+  const currency = settings?.currency || 'PHP';
   const [deleting, setDeleting] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -358,8 +362,8 @@ export default function AdminProductsPage() {
                         )}
                       </TableCell>
                       <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell>₱{p.cost.toLocaleString()}</TableCell>
-                      <TableCell>₱{p.sellingPrice.toLocaleString()}</TableCell>
+                      <TableCell>{formatCurrency(p.cost, currency)}</TableCell>
+                      <TableCell>{formatCurrency(p.sellingPrice, currency)}</TableCell>
                       <TableCell>
                         <Badge variant={p.isActive ? 'default' : 'secondary'}>
                           {p.isActive ? 'Active' : 'Inactive'}

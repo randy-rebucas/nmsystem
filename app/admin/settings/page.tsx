@@ -30,6 +30,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
+import { formatCurrency, getCurrencySymbol } from '@/hooks/use-settings';
 
 const DEFAULT_COMMISSION_STRUCTURE: { [key: number]: number } = {
   0: 165, // Direct (Level 0)
@@ -152,6 +153,8 @@ export default function AdminSettingsPage() {
   const calculateTotalCommission = () => {
     return Object.values(settings.commissionStructure).reduce((sum, amount) => sum + amount, 0);
   };
+  
+  const currencySymbol = getCurrencySymbol(settings.currency);
 
   return (
     <div className="space-y-6">
@@ -264,7 +267,7 @@ export default function AdminSettingsPage() {
                 <form onSubmit={handleSave} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="minWithdraw">Minimum Withdrawal (₱)</Label>
+                      <Label htmlFor="minWithdraw">Minimum Withdrawal ({currencySymbol})</Label>
                       <Input
                         id="minWithdraw"
                         type="number"
@@ -278,7 +281,7 @@ export default function AdminSettingsPage() {
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="maxWithdraw">Maximum Withdrawal (₱)</Label>
+                      <Label htmlFor="maxWithdraw">Maximum Withdrawal ({currencySymbol})</Label>
                       <Input
                         id="maxWithdraw"
                         type="number"
@@ -308,7 +311,7 @@ export default function AdminSettingsPage() {
               <CardHeader>
                 <CardTitle>Commission Structure</CardTitle>
                 <CardDescription>
-                  Manage commission rates for each level. Total: ₱{calculateTotalCommission().toLocaleString()}
+                  Manage commission rates for each level. Total: {formatCurrency(calculateTotalCommission(), settings.currency)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -319,7 +322,7 @@ export default function AdminSettingsPage() {
                         <TableRow>
                           <TableHead className="w-24">Level</TableHead>
                           <TableHead>Label</TableHead>
-                          <TableHead>Amount (₱)</TableHead>
+                          <TableHead>Amount ({currencySymbol})</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -345,7 +348,7 @@ export default function AdminSettingsPage() {
 
                   <div className="pt-4 border-t flex items-center justify-between">
                     <div className="text-sm font-medium">
-                      Total Commission: ₱{calculateTotalCommission().toLocaleString()}
+                      Total Commission: {formatCurrency(calculateTotalCommission(), settings.currency)}
                     </div>
                     <Button type="submit" disabled={saving}>
                       {saving ? 'Saving...' : 'Save Commission Structure'}

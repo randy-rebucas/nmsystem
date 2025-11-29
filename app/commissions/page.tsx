@@ -12,17 +12,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useSettings, formatCurrency } from '@/hooks/use-settings';
 
 interface CommissionSummary {
   totalEarned: number;
   pending: number;
   balance: number;
-  byLevel: Array<{ level: number; amount: number; count: number }>;
+  direct: { amount: number; count: number };
+  indirect: { amount: number; count: number };
+  byLevel: Array<{ level: number; amount: number; count: number; type: 'direct' | 'indirect' }>;
 }
 
 interface Commission {
   _id: string;
   level: number;
+  type?: 'direct' | 'indirect';
   amount: number;
   status: string;
   createdAt: string;
@@ -37,9 +41,12 @@ interface Commission {
 }
 
 export default function CommissionsPage() {
+  const { settings } = useSettings();
   const [summary, setSummary] = useState<CommissionSummary | null>(null);
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const currency = settings?.currency || 'PHP';
 
   useEffect(() => {
     fetchCommissions();
@@ -91,13 +98,37 @@ export default function CommissionsPage() {
       <h1 className="text-3xl font-bold">Commissions</h1>
 
       {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
           <Card>
             <CardHeader>
               <CardDescription>Total Earned</CardDescription>
               <CardTitle className="text-2xl text-blue-600">
-                ₱{summary.totalEarned.toLocaleString()}
+                {formatCurrency(summary.totalEarned, currency)}
               </CardTitle>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardDescription>Direct Commissions</CardDescription>
+              <CardTitle className="text-2xl text-purple-600">
+                {formatCurrency(summary.direct.amount, currency)}
+              </CardTitle>
+              <CardDescription className="text-xs mt-1">
+                {summary.direct.count} transactions
+              </CardDescription>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardDescription>Indirect Commissions</CardDescription>
+              <CardTitle className="text-2xl text-orange-600">
+                {formatCurrency(summary.indirect.amount, currency)}
+              </CardTitle>
+              <CardDescription className="text-xs mt-1">
+                {summary.indirect.count} transactions
+              </CardDescription>
             </CardHeader>
           </Card>
 
@@ -105,7 +136,7 @@ export default function CommissionsPage() {
             <CardHeader>
               <CardDescription>Pending</CardDescription>
               <CardTitle className="text-2xl text-yellow-600">
-                ₱{summary.pending.toLocaleString()}
+                {formatCurrency(summary.pending, currency)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -114,7 +145,7 @@ export default function CommissionsPage() {
             <CardHeader>
               <CardDescription>Available</CardDescription>
               <CardTitle className="text-2xl text-green-600">
-                ₱{summary.balance.toLocaleString()}
+                {formatCurrency(summary.balance, currency)}
               </CardTitle>
             </CardHeader>
           </Card>
@@ -131,6 +162,7 @@ export default function CommissionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Type</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead>Count</TableHead>
                     <TableHead>Total Amount</TableHead>
@@ -139,12 +171,17 @@ export default function CommissionsPage() {
                 <TableBody>
                   {summary.byLevel.map((item) => (
                     <TableRow key={item.level}>
+                      <TableCell>
+                        <Badge variant={item.type === 'direct' ? 'default' : 'secondary'}>
+                          {item.type === 'direct' ? 'Direct' : 'Indirect'}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="font-medium">
-                        {item.level === 0 ? 'Direct (Level 0)' : `Level ${item.level}`}
+                        {item.level === 0 ? 'Level 0' : `Level ${item.level}`}
                       </TableCell>
                       <TableCell>{item.count}</TableCell>
                       <TableCell className="font-medium text-green-600">
-                        ₱{item.amount.toLocaleString()}
+                        {formatCurrency(item.amount, currency)}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -170,37 +207,44 @@ export default function CommissionsPage() {
                     <TableHead>Date</TableHead>
                     <TableHead>From</TableHead>
                     <TableHead>Product</TableHead>
+                    <TableHead>Type</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {commissions.map((commission) => (
-                    <TableRow key={commission._id}>
-                      <TableCell>
-                        {new Date(commission.createdAt).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {commission.fromUserId.firstName}{' '}
-                        {commission.fromUserId.lastName}
-                      </TableCell>
-                      <TableCell>{commission.productId.name}</TableCell>
-                      <TableCell>
-                        {commission.level === 0
-                          ? 'Direct'
-                          : `Level ${commission.level}`}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        ₱{commission.amount.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {commission.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {commissions.map((commission) => {
+                    const type = commission.type || (commission.level === 0 ? 'direct' : 'indirect');
+                    return (
+                      <TableRow key={commission._id}>
+                        <TableCell>
+                          {new Date(commission.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {commission.fromUserId.firstName}{' '}
+                          {commission.fromUserId.lastName}
+                        </TableCell>
+                        <TableCell>{commission.productId.name}</TableCell>
+                        <TableCell>
+                          <Badge variant={type === 'direct' ? 'default' : 'secondary'}>
+                            {type === 'direct' ? 'Direct' : 'Indirect'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          Level {commission.level}
+                        </TableCell>
+                        <TableCell className="font-medium text-green-600">
+                          {formatCurrency(commission.amount, currency)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {commission.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>

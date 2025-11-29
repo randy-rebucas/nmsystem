@@ -54,6 +54,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useSettings, formatCurrency } from '@/hooks/use-settings';
 import {
   Select,
   SelectContent,
@@ -116,6 +117,7 @@ interface AdminUser {
 }
 
 export default function AdminUsersPage() {
+  const { settings } = useSettings();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,6 +128,8 @@ export default function AdminUsersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  const currency = settings?.currency || 'PHP';
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -541,7 +545,7 @@ export default function AdminUsersPage() {
                             {user.isAdmin ? 'Admin' : 'User'}
                           </Badge>
                         </TableCell>
-                        <TableCell>₱{user.wallet?.balance?.toLocaleString() || '0'}</TableCell>
+                        <TableCell>{formatCurrency(user.wallet?.balance || 0, currency)}</TableCell>
                         <TableCell>{user.level}</TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -732,15 +736,15 @@ export default function AdminUsersPage() {
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label className="text-muted-foreground">Balance</Label>
-                    <p className="font-medium">₱{selectedUser.wallet?.balance?.toLocaleString() || '0'}</p>
+                    <p className="font-medium">{formatCurrency(selectedUser.wallet?.balance || 0, currency)}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Pending</Label>
-                    <p className="font-medium">₱{selectedUser.wallet?.pending?.toLocaleString() || '0'}</p>
+                    <p className="font-medium">{formatCurrency(selectedUser.wallet?.pending || 0, currency)}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Total Earned</Label>
-                    <p className="font-medium">₱{selectedUser.wallet?.totalEarned?.toLocaleString() || '0'}</p>
+                    <p className="font-medium">{formatCurrency(selectedUser.wallet?.totalEarned || 0, currency)}</p>
                   </div>
                 </div>
               </div>

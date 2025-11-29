@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useSettings, formatCurrency, getCurrencySymbol } from '@/hooks/use-settings';
 
 interface RewardPoints {
   balance: number;
@@ -36,11 +37,15 @@ interface RewardHistory {
 }
 
 export default function RewardsPage() {
+  const { settings } = useSettings();
   const [rewardPoints, setRewardPoints] = useState<RewardPoints | null>(null);
   const [history, setHistory] = useState<RewardHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [redeemPoints, setRedeemPoints] = useState('');
   const [redeeming, setRedeeming] = useState(false);
+  
+  const currencySymbol = settings ? getCurrencySymbol(settings.currency) : '₱';
+  const minRedemptionPoints = settings?.minRedemptionPoints || 100;
 
   useEffect(() => {
     fetchRewards();
@@ -80,9 +85,9 @@ export default function RewardsPage() {
       return;
     }
 
-    // Minimum redemption: 100 points (₱1)
-    if (points < 100) {
-      setRedeemError('Minimum redemption is 100 points (₱1)');
+    // Minimum redemption from settings
+    if (points < minRedemptionPoints) {
+      setRedeemError(`Minimum redemption is ${minRedemptionPoints} points (${formatCurrency(points / 100, settings?.currency || 'PHP')})`);
       return;
     }
 
@@ -140,6 +145,7 @@ export default function RewardsPage() {
   }
 
   const pesoValue = (rewardPoints.balance / 100).toFixed(2);
+  const currency = settings?.currency || 'PHP';
 
   return (
     <div className="px-4 py-6 sm:px-0 space-y-6">
@@ -153,7 +159,7 @@ export default function RewardsPage() {
               {rewardPoints.balance.toLocaleString()}
             </CardTitle>
             <CardDescription className="text-xs">
-              ≈ ₱{pesoValue}
+              ≈ {formatCurrency(parseFloat(pesoValue), currency)}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -185,8 +191,8 @@ export default function RewardsPage() {
           <Alert>
             <AlertTitle>Conversion Rate</AlertTitle>
             <AlertDescription>
-              <strong>Conversion Rate:</strong> 100 points = ₱1.00<br />
-              <strong>Minimum Redemption:</strong> 100 points
+              <strong>Conversion Rate:</strong> 100 points = {formatCurrency(1, currency)}<br />
+              <strong>Minimum Redemption:</strong> {minRedemptionPoints} points
             </AlertDescription>
           </Alert>
           <form onSubmit={handleRedeem} className="space-y-4">
@@ -205,7 +211,7 @@ export default function RewardsPage() {
               <Input
                 type="number"
                 id="points"
-                min="100"
+                min={minRedemptionPoints}
                 max={rewardPoints.balance}
                 step="100"
                 value={redeemPoints}
@@ -217,8 +223,7 @@ export default function RewardsPage() {
               </p>
               {redeemPoints && !isNaN(parseInt(redeemPoints)) && (
                 <p className="text-sm text-green-600">
-                  You will receive: ₱
-                  {(parseInt(redeemPoints) / 100).toFixed(2)}
+                  You will receive: {formatCurrency(parseInt(redeemPoints) / 100, currency)}
                 </p>
               )}
             </div>
@@ -226,9 +231,9 @@ export default function RewardsPage() {
               type="submit"
               disabled={
                 redeeming ||
-                rewardPoints.balance < 100 ||
+                rewardPoints.balance < minRedemptionPoints ||
                 !redeemPoints ||
-                parseInt(redeemPoints) < 100
+                parseInt(redeemPoints) < minRedemptionPoints
               }
             >
               {redeeming ? 'Processing...' : 'Redeem Points'}

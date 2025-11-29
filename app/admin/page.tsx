@@ -33,6 +33,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useSettings, formatCurrency } from '@/hooks/use-settings';
 
 interface Product {
   _id: string;
@@ -47,8 +48,11 @@ interface ActivityData {
 }
 
 export default function AdminPage() {
+  const { settings } = useSettings();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const currency = settings?.currency || 'PHP';
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
   const [activityLoading, setActivityLoading] = useState(true);
 
@@ -242,7 +246,7 @@ export default function AdminPage() {
                   {products.slice(0, 5).map((p) => (
                     <TableRow key={p._id}>
                       <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell>₱{p.sellingPrice.toLocaleString()}</TableCell>
+                      <TableCell>{formatCurrency(p.sellingPrice, currency)}</TableCell>
                       <TableCell>{p.isActive ? 'Active' : 'Inactive'}</TableCell>
                     </TableRow>
                   ))}

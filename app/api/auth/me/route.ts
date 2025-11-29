@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { getCurrentUser } from '@/lib/auth';
+import { processPendingCommissions } from '@/lib/commissionEngine';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,19 +12,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Process any remaining pending commissions (for backward compatibility)
+    await processPendingCommissions(user._id);
+
+    // Get updated user with latest wallet balance
+    const updatedUser = await getCurrentUser(request);
+    if (!updatedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     return NextResponse.json(
       {
         user: {
-          id: user._id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          isActivated: user.isActivated,
-          isAdmin: user.isAdmin,
-          wallet: user.wallet,
-          rewardPoints: user.rewardPoints,
-          activationDate: user.activationDate,
-          lastPurchaseDate: user.lastPurchaseDate,
+          id: updatedUser._id,
+          email: updatedUser.email,
+          firstName: updatedUser.firstName,
+          lastName: updatedUser.lastName,
+          isActivated: updatedUser.isActivated,
+          isAdmin: updatedUser.isAdmin,
+          wallet: updatedUser.wallet,
+          rewardPoints: updatedUser.rewardPoints,
+          activationDate: updatedUser.activationDate,
+          lastPurchaseDate: updatedUser.lastPurchaseDate,
         },
       },
       { status: 200 }
