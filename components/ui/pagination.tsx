@@ -77,6 +77,7 @@ function PaginationLink({
   }
 
   if (href) {
+    const { href: _, ...linkProps } = props as React.ComponentProps<typeof Link> & { href?: string };
     return (
       <Link
         aria-current={isActive ? "page" : undefined}
@@ -84,7 +85,7 @@ function PaginationLink({
         data-active={isActive}
         className={baseClassName}
         href={href}
-        {...(props as React.ComponentProps<typeof Link>)}
+        {...linkProps}
       />
     )
   }

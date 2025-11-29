@@ -191,9 +191,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">
-                {user.firstName} {user.lastName}
-              </span>
+              {user && (
+                <span className="text-sm text-muted-foreground">
+                  {user.firstName} {user.lastName}
+                </span>
+              )}
               <Button onClick={handleLogout} variant="default">
                 Logout
               </Button>

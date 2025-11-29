@@ -5,14 +5,28 @@ import Settings from '@/models/Settings';
 export async function GET() {
   try {
     await connectDB();
-    const settings = await Settings.getSettings();
+    
+    // Get or create settings
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = await Settings.create({});
+    }
     
     // Convert commissionStructure Map to object
     const commissionStructure: { [key: number]: number } = {};
     if (settings.commissionStructure) {
-      settings.commissionStructure.forEach((value: number, key: string) => {
-        commissionStructure[parseInt(key)] = value;
-      });
+      // Mongoose Map has forEach method, but TypeScript sees it as plain object
+      const commissionMap = settings.commissionStructure as any;
+      if (commissionMap instanceof Map) {
+        commissionMap.forEach((value: number, key: string) => {
+          commissionStructure[parseInt(key)] = value;
+        });
+      } else {
+        // If it's already an object, convert it directly
+        Object.entries(commissionMap).forEach(([key, value]) => {
+          commissionStructure[parseInt(key)] = value as number;
+        });
+      }
     }
 
     return NextResponse.json({
@@ -56,7 +70,14 @@ export async function POST(request: NextRequest) {
       const commissionMap = new Map<number, number>();
       Object.entries(commissionStructure).forEach(([level, amount]) => {
         const levelNum = parseInt(level);
-        const amountNum = typeof amount === 'string' ? parseFloat(amount) : amount;
+        let amountNum: number;
+        if (typeof amount === 'string') {
+          amountNum = parseFloat(amount);
+        } else if (typeof amount === 'number') {
+          amountNum = amount;
+        } else {
+          return; // Skip invalid entries
+        }
         if (!isNaN(levelNum) && !isNaN(amountNum)) {
           commissionMap.set(levelNum, amountNum);
         }
@@ -68,9 +89,17 @@ export async function POST(request: NextRequest) {
 
     // Convert commissionStructure Map to object for response
     const commissionStructureObj: { [key: number]: number } = {};
-    settings.commissionStructure.forEach((value: number, key: string) => {
-      commissionStructureObj[parseInt(key)] = value;
-    });
+    const commissionMap = settings.commissionStructure as any;
+    if (commissionMap instanceof Map) {
+      commissionMap.forEach((value: number, key: string) => {
+        commissionStructureObj[parseInt(key)] = value;
+      });
+    } else {
+      // If it's already an object, convert it directly
+      Object.entries(commissionMap).forEach(([key, value]) => {
+        commissionStructureObj[parseInt(key)] = value as number;
+      });
+    }
 
     return NextResponse.json({
       siteName: settings.siteName,
